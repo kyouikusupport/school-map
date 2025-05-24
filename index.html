@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
@@ -26,15 +26,35 @@
     }).addTo(map);
 
     const markers = {};
+    const timeoutMinutes = 5;
 
     onValue(ref(db, 'groups'), (snapshot) => {
       const data = snapshot.val();
+      const now = Date.now();
+
+      // 古いマーカーは非表示にする
+      for (const groupId in markers) {
+        if (!data[groupId]) {
+          map.removeLayer(markers[groupId]);
+          delete markers[groupId];
+        }
+      }
+
       for (const groupId in data) {
-        const { lat, lng } = data[groupId];
-        if (!markers[groupId]) {
-          markers[groupId] = L.marker([lat, lng]).addTo(map).bindPopup(groupId);
+        const { lat, lng, timestamp } = data[groupId];
+        const ageMinutes = (now - (timestamp || 0)) / 60000;
+
+        if (ageMinutes <= timeoutMinutes) {
+          if (!markers[groupId]) {
+            markers[groupId] = L.marker([lat, lng]).addTo(map).bindPopup(groupId);
+          } else {
+            markers[groupId].setLatLng([lat, lng]);
+          }
         } else {
-          markers[groupId].setLatLng([lat, lng]);
+          if (markers[groupId]) {
+            map.removeLayer(markers[groupId]);
+            delete markers[groupId];
+          }
         }
       }
     });
