@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
@@ -6,31 +6,51 @@
 </head>
 <body>
   <h2>現在地を送信中...</h2>
+  <button id="stopButton">送信終了</button>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+    import { getDatabase, ref, set, remove } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
     import { firebaseConfig } from './js/firebase-config.js';
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
     const groupId = prompt("班の名前を入力してください（例：班1）");
+    if (!groupId) {
+      alert("班名が入力されていません。ページを閉じます。");
+      window.close();
+    }
+
+    let watchId = null;
 
     function updateLocation(position) {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
-      set(ref(db, 'groups/' + groupId), { lat, lng });
+      set(ref(db, 'groups/' + groupId), {
+        lat: lat,
+        lng: lng,
+        timestamp: Date.now()
+      });
     }
 
     function handleError(error) {
       alert("位置情報を取得できませんでした: " + error.message);
     }
 
-    navigator.geolocation.watchPosition(updateLocation, handleError, {
+    watchId = navigator.geolocation.watchPosition(updateLocation, handleError, {
       enableHighAccuracy: true,
       maximumAge: 10000,
       timeout: 10000
+    });
+
+    // 「送信終了」ボタンの処理
+    document.getElementById("stopButton").addEventListener("click", () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      remove(ref(db, 'groups/' + groupId));
+      alert("位置送信を終了しました。ページを閉じてください。");
     });
   </script>
 </body>
