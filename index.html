@@ -11,7 +11,7 @@
 <body>
   <div id="map"></div>
 
-  <!-- Leaflet読み込み -->
+  <!-- Leaflet 読み込み -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <!-- Firebase + 地図スクリプト -->
@@ -20,14 +20,41 @@
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
     import { firebaseConfig } from './js/firebase-config.js';
 
+    // Firebase 初期化
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // 地図初期化（鎌倉駅周辺）
     const map = L.map('map').setView([35.3168, 139.5466], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
+    // 🏛️ ランドマーク一覧（緑のピン）
+    const landmarks = [
+      [35.3263, 139.5569, "鶴岡八幡宮"],
+      [35.3168, 139.5356, "高徳院（鎌倉大仏）"],
+      [35.3216, 139.5555, "小町通り（中央）"],
+      [35.3253, 139.5467, "銭洗弁財天宇賀福神社"],
+      [35.3300, 139.5585, "建長寺"],
+      [35.3372, 139.5467, "円覚寺"],
+      [35.3238, 139.5526, "寿福寺"],
+      [35.3187, 139.5500, "鎌倉駅"],
+      [35.3357, 139.5457, "北鎌倉駅"]
+    ];
+
+    landmarks.forEach(([lat, lng, name]) => {
+      L.marker([lat, lng], {
+        icon: L.icon({
+          iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/green-dot.png',
+          iconSize: [32, 32],
+          iconAnchor: [16, 32],
+          popupAnchor: [0, -32]
+        })
+      }).addTo(map).bindPopup(name);
+    });
+
+    // 👥 班のマーカー表示処理（動的）
     const markers = {};
     const timeoutMinutes = 5;
 
@@ -35,7 +62,7 @@
       const data = snapshot.val() || {};
       const now = Date.now();
 
-      // 古い or 削除されたピンを非表示にする
+      // 古い/削除されたマーカーを削除
       for (const groupId in markers) {
         if (
           !data[groupId] ||
@@ -46,7 +73,7 @@
         }
       }
 
-      // 有効なデータをピンとして表示・更新
+      // 新規または更新のマーカーを表示
       for (const groupId in data) {
         const { lat, lng, timestamp } = data[groupId];
         const ageMinutes = (now - (timestamp || 0)) / 60000;
