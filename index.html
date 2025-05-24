@@ -20,11 +20,9 @@
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
     import { firebaseConfig } from './js/firebase-config.js';
 
-    // Firebase初期化
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 地図初期化（鎌倉駅付近）
     const map = L.map('map').setView([35.3168, 139.5466], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
@@ -33,12 +31,11 @@
     const markers = {};
     const timeoutMinutes = 5;
 
-    // Firebaseの /groups を監視
     onValue(ref(db, 'groups'), (snapshot) => {
       const data = snapshot.val() || {};
       const now = Date.now();
 
-      // 現在あるマーカーで、もう存在しない or 古いものを削除
+      // 古い or 削除されたピンを非表示にする
       for (const groupId in markers) {
         if (
           !data[groupId] ||
@@ -49,7 +46,7 @@
         }
       }
 
-      // 最新のデータをもとにマーカーを追加または更新
+      // 有効なデータをピンとして表示・更新
       for (const groupId in data) {
         const { lat, lng, timestamp } = data[groupId];
         const ageMinutes = (now - (timestamp || 0)) / 60000;
