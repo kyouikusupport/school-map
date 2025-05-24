@@ -1,63 +1,28 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <title>修学旅行 班の現在地マップ</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    #map { height: 100vh; }
-  </style>
-</head>
-<body>
-  <div id="map"></div>
+onValue(ref(db, 'groups'), (snapshot) => {
+  const data = snapshot.val() || {};
+  const now = Date.now();
+  const timeoutMinutes = 5;
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
-    import { firebaseConfig } from './js/firebase-config.js';
+  // すでに存在するマーカーをすべてチェック
+  for (const groupId in markers) {
+    // データが存在しない、または古すぎる場合は削除
+    if (!data[groupId] || ((now - (data[groupId].timestamp || 0)) / 60000) > timeoutMinutes) {
+      map.removeLayer(markers[groupId]);
+      delete markers[groupId];
+    }
+  }
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+  // 残っている新しい班の位置を更新
+  for (const groupId in data) {
+    const { lat, lng, timestamp } = data[groupId];
+    const ageMinutes = (now - (timestamp || 0)) / 60000;
 
-    const map = L.map('map').setView([35.3168, 139.5466], 15); // 鎌倉駅周辺
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    const markers = {};
-    const timeoutMinutes = 5;
-
-    onValue(ref(db, 'groups'), (snapshot) => {
-      const data = snapshot.val();
-      const now = Date.now();
-
-      // 古いマーカーは非表示にする
-      for (const groupId in markers) {
-        if (!data[groupId]) {
-          map.removeLayer(markers[groupId]);
-          delete markers[groupId];
-        }
+    if (ageMinutes <= timeoutMinutes) {
+      if (!markers[groupId]) {
+        markers[groupId] = L.marker([lat, lng]).addTo(map).bindPopup(groupId);
+      } else {
+        markers[groupId].setLatLng([lat, lng]);
       }
-
-      for (const groupId in data) {
-        const { lat, lng, timestamp } = data[groupId];
-        const ageMinutes = (now - (timestamp || 0)) / 60000;
-
-        if (ageMinutes <= timeoutMinutes) {
-          if (!markers[groupId]) {
-            markers[groupId] = L.marker([lat, lng]).addTo(map).bindPopup(groupId);
-          } else {
-            markers[groupId].setLatLng([lat, lng]);
-          }
-        } else {
-          if (markers[groupId]) {
-            map.removeLayer(markers[groupId]);
-            delete markers[groupId];
-          }
-        }
-      }
-    });
-  </script>
-</body>
-</html>
+    }
+  }
+});
