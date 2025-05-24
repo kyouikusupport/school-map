@@ -16,10 +16,12 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const groupId = prompt("班の名前を入力してください（例：班1）");
+    const groupId = prompt("班の名前を入力してください（例：班1）")?.trim();
+
     if (!groupId) {
-      alert("班名が入力されていません。ページを閉じます。");
-      window.close();
+      alert("班名が入力されていないため、送信を中止します。");
+      document.body.innerHTML = "<h2>送信は行われませんでした。</h2>";
+      throw new Error("班名未入力のため中止");
     }
 
     let watchId = null;
@@ -44,7 +46,6 @@
       timeout: 10000
     });
 
-    // 「送信終了」ボタンの処理
     document.getElementById("stopButton").addEventListener("click", () => {
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
