@@ -79,12 +79,23 @@
         const ageMinutes = (now - (timestamp || 0)) / 60000;
 
         if (ageMinutes <= timeoutMinutes) {
+          const timeStr = new Date(timestamp).toLocaleString('ja-JP', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          const popupContent = `${groupId}<br>${timeStr}`;
+
           if (!markers[groupId]) {
             markers[groupId] = L.marker([lat, lng])
               .addTo(map)
-              .bindPopup(groupId);
+              .bindPopup(popupContent);
           } else {
             markers[groupId].setLatLng([lat, lng]);
+            markers[groupId].bindPopup(popupContent); // ポップアップも更新
           }
         }
       }
