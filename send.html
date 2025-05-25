@@ -2,57 +2,81 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>現在地送信</title>
+  <title>現在地を送信</title>
 </head>
 <body>
-  <h2>現在地を送信中...</h2>
-  <button id="stopButton">送信終了</button>
+  <h2>班の現在地を送信</h2>
+
+  <label>班の名前: <input id="groupInput" /></label>
+  <button id="saveGroup">班名を保存</button>
+  <br /><br />
+  <button id="sendLocation">📍 現在地を送信</button>
+  <p id="status"></p>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getDatabase, ref, set, remove } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
     import { firebaseConfig } from './js/firebase-config.js';
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const groupId = prompt("班の名前を入力してください（例：班1）")?.trim();
+    const groupInput = document.getElementById("groupInput");
+    const saveGroupButton = document.getElementById("saveGroup");
+    const sendLocationButton = document.getElementById("sendLocation");
+    const status = document.getElementById("status");
 
-    if (!groupId) {
-      alert("班名が入力されていないため、送信を中止します。");
-      document.body.innerHTML = "<h2>送信は行われませんでした。</h2>";
-      throw new Error("班名未入力のため中止");
+    // 保存されている班名を表示
+    if (localStorage.getItem("groupId")) {
+      groupInput.value = localStorage.getItem("groupId");
     }
 
-    let watchId = null;
-
-    function updateLocation(position) {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      set(ref(db, 'groups/' + groupId), {
-        lat: lat,
-        lng: lng,
-        timestamp: Date.now()
-      });
-    }
-
-    function handleError(error) {
-      alert("位置情報を取得できませんでした: " + error.message);
-    }
-
-    watchId = navigator.geolocation.watchPosition(updateLocation, handleError, {
-      enableHighAccuracy: true,
-      maximumAge: 10000,
-      timeout: 10000
-    });
-
-    document.getElementById("stopButton").addEventListener("click", () => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
+    // 班名を保存
+    saveGroupButton.addEventListener("click", () => {
+      const groupId = groupInput.value.trim();
+      if (groupId) {
+        localStorage.setItem("groupId", groupId);
+        alert("班名を保存しました");
+      } else {
+        alert("班名を入力してください");
       }
-      remove(ref(db, 'groups/' + groupId));
-      alert("位置送信を終了しました。ページを閉じてください。");
     });
+
+    // 送信処理（手動・自動共通）
+    function sendCurrentLocation() {
+      const groupId = groupInput.value.trim();
+      if (!groupId) {
+        status.textContent = "⚠️ 班名が未入力です。";
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          set(ref(db, 'groups/' + groupId), {
+            lat: lat,
+            lng: lng,
+            timestamp: Date.now()
+          });
+          status.textContent = `✅ ${new Date().toLocaleTimeString()} に送信しました`;
+        },
+        (error) => {
+          status.textContent = `❌ 位置取得エラー: ${error.message}`;
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    // 手動送信
+    sendLocationButton.addEventListener("click", sendCurrentLocation);
+
+    // 自動送信（1分おき）
+    setInterval(() => {
+      if (document.visibilityState === "visible") {
+        sendCurrentLocation();
+      }
+    }, 60000); // 60000ms = 1分
   </script>
 </body>
 </html>
