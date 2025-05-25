@@ -104,16 +104,16 @@
 
     const groupInput = document.getElementById("groupInput");
     const sendLocationButton = document.getElementById("sendLocation");
-    const endLocationButton = document.getElementById("endLocation"); // ⭐️ 重要
+    const endLocationButton = document.getElementById("endLocation");
     const status = document.getElementById("status");
     const logList = document.getElementById("logList");
 
-    // 保存されている班名を表示
+    let autoSendTimer = null;
+
     if (localStorage.getItem("groupId")) {
       groupInput.value = localStorage.getItem("groupId");
     }
 
-    // 入力変更時に保存
     groupInput.addEventListener("input", () => {
       const groupId = groupInput.value.trim();
       if (groupId) {
@@ -121,14 +121,12 @@
       }
     });
 
-    // ログを画面に表示
     function logMessage(type) {
       const li = document.createElement("li");
       li.textContent = `【${type}】${new Date().toLocaleTimeString()} に送信しました`;
       logList.prepend(li);
     }
 
-    // 現在地を送信
     function sendCurrentLocation(type = "自動") {
       const groupId = groupInput.value.trim();
       if (!groupId) {
@@ -147,6 +145,12 @@
           });
           status.textContent = `✅ ${type}送信: ${new Date().toLocaleTimeString()}`;
           logMessage(type);
+
+          // 自動送信が止まっていたら再開
+          if (autoSendTimer === null && type === "手動") {
+            startAutoSend();
+            logMessage("自動送信を再開");
+          }
         },
         (error) => {
           status.textContent = `❌ 位置取得エラー: ${error.message}`;
@@ -155,7 +159,6 @@
       );
     }
 
-    // 送信を終了する
     function endLocation() {
       const groupId = groupInput.value.trim();
       if (!groupId) {
@@ -167,22 +170,31 @@
         .then(() => {
           status.textContent = `🛑 送信を終了しました (${new Date().toLocaleTimeString()})`;
           logMessage("終了");
+
+          if (autoSendTimer !== null) {
+            clearInterval(autoSendTimer);
+            autoSendTimer = null;
+            logMessage("自動送信を停止");
+          }
         })
         .catch((error) => {
           status.textContent = `❌ 削除エラー: ${error.message}`;
         });
     }
 
-    // ボタンイベント
+    function startAutoSend() {
+      autoSendTimer = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          sendCurrentLocation("自動");
+        }
+      }, 60000);
+    }
+
     sendLocationButton.addEventListener("click", () => sendCurrentLocation("手動"));
     endLocationButton.addEventListener("click", endLocation);
 
-    // 自動送信（1分ごと）
-    setInterval(() => {
-      if (document.visibilityState === "visible") {
-        sendCurrentLocation("自動");
-      }
-    }, 60000);
+    // 初期に自動送信を開始
+    startAutoSend();
   </script>
 </body>
 </html>
