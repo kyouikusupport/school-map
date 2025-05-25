@@ -144,8 +144,24 @@
       );
     }
 
+    // 送信を終了する
+    function endLocation() {
+      const groupId = groupInput.value.trim();
+      if (!groupId) {
+        status.textContent = "⚠️ 班名が未入力です。";
+        return;
+      }
+
+      remove(ref(db, 'groups/' + groupId));
+      status.textContent = `🛑 送信を終了しました (${new Date().toLocaleTimeString()})`;
+      logMessage("終了");
+    }
+
+
+    
     // 手動送信
     sendLocationButton.addEventListener("click", () => sendCurrentLocation("手動"));
+    endLocationButton.addEventListener("click", endLocation);
 
     // 自動送信（1分おき）
     setInterval(() => {
