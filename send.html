@@ -28,22 +28,32 @@
       border: 1px solid #ccc;
     }
 
-    #sendLocation {
+    button {
       font-size: 1.2em;
       padding: 15px 40px;
-      margin-top: 10px;
-      margin-bottom: 20px;
-      background-color: #007bff;
-      color: white;
+      margin: 10px 0;
+      width: 80%;
+      max-width: 300px;
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      width: 80%;
-      max-width: 300px;
+      color: white;
+    }
+
+    #sendLocation {
+      background-color: #007bff;
     }
 
     #sendLocation:hover {
       background-color: #0056b3;
+    }
+
+    #endLocation {
+      background-color: #dc3545;
+    }
+
+    #endLocation:hover {
+      background-color: #a71d2a;
     }
 
     #status {
@@ -75,6 +85,8 @@
   <input id="groupInput" placeholder="班の名前を入力" />
   <br />
   <button id="sendLocation">📍 現在地を送信</button>
+  <br />
+  <button id="endLocation">🛑 送信を終了する</button>
   <p id="status"></p>
 
   <div id="log">
@@ -84,7 +96,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+    import { getDatabase, ref, set, remove } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
     import { firebaseConfig } from './js/firebase-config.js';
 
     const app = initializeApp(firebaseConfig);
@@ -92,15 +104,14 @@
 
     const groupInput = document.getElementById("groupInput");
     const sendLocationButton = document.getElementById("sendLocation");
+    const endLocationButton = document.getElementById("endLocation");
     const status = document.getElementById("status");
     const logList = document.getElementById("logList");
 
-    // 保存されている班名を表示
     if (localStorage.getItem("groupId")) {
       groupInput.value = localStorage.getItem("groupId");
     }
 
-    // 入力変更時に保存
     groupInput.addEventListener("input", () => {
       const groupId = groupInput.value.trim();
       if (groupId) {
@@ -108,14 +119,12 @@
       }
     });
 
-    // ログを画面に表示
     function logMessage(type) {
       const li = document.createElement("li");
-      li.textContent = `【${type}】${new Date().toLocaleTimeString()} に送信しました`;
+      li.textContent = `【${type}】${new Date().toLocaleTimeString()} に実行`;
       logList.prepend(li);
     }
 
-    // 現在地を送信
     function sendCurrentLocation(type = "自動") {
       const groupId = groupInput.value.trim();
       if (!groupId) {
@@ -142,15 +151,17 @@
       );
     }
 
-    // 手動送信
-    sendLocationButton.addEventListener("click", () => sendCurrentLocation("手動"));
-
-    // 自動送信（1分おき）
-    setInterval(() => {
-      if (document.visibilityState === "visible") {
-        sendCurrentLocation("自動");
+    function endLocation() {
+      const groupId = groupInput.value.trim();
+      if (!groupId) {
+        status.textContent = "⚠️ 班名が未入力です。";
+        return;
       }
-    }, 60000);
-  </script>
-</body>
-</html>
+
+      remove(ref(db, 'groups/' + groupId));
+      status.textContent = `🛑 送信を終了しました (${new Date().toLocaleTimeString()})`;
+      logMessage("終了");
+    }
+
+    sendLocationButton.addEventListener("click", () => sendCurrentLocation("手動"));
+    endLocationButton.addEventL
