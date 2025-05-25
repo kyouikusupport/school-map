@@ -162,9 +162,12 @@
         return;
       }
 
-      remove(ref(db, 'groups/' + groupId));
-      status.textContent = `🛑 送信を終了しました (${new Date().toLocaleTimeString()})`;
-      logMessage("終了");
+      remove(ref(db, 'groups/' + groupId)).then(() => {
+        status.textContent = `🛑 送信を終了しました (${new Date().toLocaleTimeString()})`;
+        logMessage("終了");
+      } ).catch((error) => {
+        status.textContent = `❌ 削除エラー: ${error.message}`;
+      });
     }
   
     // 手動送信
