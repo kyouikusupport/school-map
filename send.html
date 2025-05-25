@@ -32,6 +32,15 @@
       font-size: 18px;
       color: green;
     }
+    #log {
+      margin-top: 30px;
+      text-align: left;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+      font-size: 16px;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -41,6 +50,11 @@
   <br /><br />
   <button id="sendLocation">📍 現在地を送信</button>
   <p id="status"></p>
+
+  <div id="log">
+    <strong>送信履歴:</strong>
+    <ul id="logList"></ul>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
@@ -53,13 +67,13 @@
     const groupInput = document.getElementById("groupInput");
     const sendLocationButton = document.getElementById("sendLocation");
     const status = document.getElementById("status");
+    const logList = document.getElementById("logList");
 
-    // 保存されている班名を表示
+    // 班名の保存
     if (localStorage.getItem("groupId")) {
       groupInput.value = localStorage.getItem("groupId");
     }
 
-    // 入力が変更されるたびに自動保存
     groupInput.addEventListener("input", () => {
       const groupId = groupInput.value.trim();
       if (groupId) {
@@ -67,8 +81,13 @@
       }
     });
 
-    // 送信処理
-    function sendCurrentLocation() {
+    function logMessage(type) {
+      const li = document.createElement("li");
+      li.textContent = `【${type}】${new Date().toLocaleTimeString()} に送信しました`;
+      logList.prepend(li); // 新しいログを上に追加
+    }
+
+    function sendCurrentLocation(type = "自動") {
       const groupId = groupInput.value.trim();
       if (!groupId) {
         status.textContent = "⚠️ 班名が未入力です。";
@@ -84,7 +103,8 @@
             lng: lng,
             timestamp: Date.now()
           });
-          status.textContent = `✅ ${new Date().toLocaleTimeString()} に送信しました`;
+          status.textContent = `✅ ${type}送信: ${new Date().toLocaleTimeString()}`;
+          logMessage(type);
         },
         (error) => {
           status.textContent = `❌ 位置取得エラー: ${error.message}`;
@@ -94,9 +114,14 @@
     }
 
     // 手動送信
-    sendLocationButton.addEventListener("click", sendCurrentLocation);
+    sendLocationButton.addEventListener("click", () => sendCurrentLocation("手動"));
 
     // 自動送信（1分ごと）
     setInterval(() => {
       if (document.visibilityState === "visible") {
-        sendCurre
+        sendCurrentLocation("自動");
+      }
+    }, 60000);
+  </script>
+</body>
+</html>
