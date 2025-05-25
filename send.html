@@ -2,52 +2,78 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>現在地を送信</title>
   <style>
     body {
       font-family: sans-serif;
+      margin: 0;
+      padding: 20px;
       text-align: center;
-      padding: 30px;
+      background-color: #f9f9f9;
     }
+
+    h2 {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+    }
+
     input {
-      font-size: 20px;
+      font-size: 1.2em;
       padding: 10px;
-      width: 200px;
+      width: 80%;
+      max-width: 300px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
+
     #sendLocation {
-      font-size: 24px;
+      font-size: 1.2em;
       padding: 15px 40px;
-      margin-top: 20px;
+      margin-top: 10px;
+      margin-bottom: 20px;
       background-color: #007bff;
       color: white;
       border: none;
       border-radius: 10px;
       cursor: pointer;
+      width: 80%;
+      max-width: 300px;
     }
+
     #sendLocation:hover {
       background-color: #0056b3;
     }
+
     #status {
-      margin-top: 20px;
-      font-size: 18px;
+      font-size: 1em;
       color: green;
+      margin-bottom: 10px;
     }
+
     #log {
-      margin-top: 30px;
       text-align: left;
-      max-width: 500px;
-      margin-left: auto;
-      margin-right: auto;
-      font-size: 16px;
+      max-width: 90%;
+      margin: 0 auto;
+      font-size: 0.9em;
       line-height: 1.5;
+    }
+
+    ul {
+      padding-left: 1.2em;
+    }
+
+    li {
+      margin-bottom: 5px;
     }
   </style>
 </head>
 <body>
   <h2>班の現在地を送信する</h2>
 
-  <label>班の名前: <input id="groupInput" /></label>
-  <br /><br />
+  <input id="groupInput" placeholder="班の名前を入力" />
+  <br />
   <button id="sendLocation">📍 現在地を送信</button>
   <p id="status"></p>
 
@@ -69,11 +95,12 @@
     const status = document.getElementById("status");
     const logList = document.getElementById("logList");
 
-    // 班名の保存
+    // 保存されている班名を表示
     if (localStorage.getItem("groupId")) {
       groupInput.value = localStorage.getItem("groupId");
     }
 
+    // 入力変更時に保存
     groupInput.addEventListener("input", () => {
       const groupId = groupInput.value.trim();
       if (groupId) {
@@ -81,12 +108,14 @@
       }
     });
 
+    // ログを画面に表示
     function logMessage(type) {
       const li = document.createElement("li");
       li.textContent = `【${type}】${new Date().toLocaleTimeString()} に送信しました`;
-      logList.prepend(li); // 新しいログを上に追加
+      logList.prepend(li);
     }
 
+    // 現在地を送信
     function sendCurrentLocation(type = "自動") {
       const groupId = groupInput.value.trim();
       if (!groupId) {
@@ -116,7 +145,7 @@
     // 手動送信
     sendLocationButton.addEventListener("click", () => sendCurrentLocation("手動"));
 
-    // 自動送信（1分ごと）
+    // 自動送信（1分おき）
     setInterval(() => {
       if (document.visibilityState === "visible") {
         sendCurrentLocation("自動");
