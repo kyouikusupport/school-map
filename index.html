@@ -56,7 +56,7 @@
 
     // 👥 班のマーカー表示処理（動的）
     const markers = {};
-    const timeoutMinutes = 5;
+    const timeoutMinutes = 90;
 
     onValue(ref(db, 'groups'), (snapshot) => {
       const data = snapshot.val() || {};
