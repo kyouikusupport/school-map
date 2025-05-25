@@ -3,12 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <title>現在地を送信</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+    input {
+      font-size: 20px;
+      padding: 10px;
+      width: 200px;
+    }
+    #sendLocation {
+      font-size: 24px;
+      padding: 15px 40px;
+      margin-top: 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #sendLocation:hover {
+      background-color: #0056b3;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+      color: green;
+    }
+  </style>
 </head>
 <body>
-  <h2>班の現在地を送信</h2>
+  <h2>班の現在地を送信する</h2>
 
   <label>班の名前: <input id="groupInput" /></label>
-  <button id="saveGroup">班名を保存</button>
   <br /><br />
   <button id="sendLocation">📍 現在地を送信</button>
   <p id="status"></p>
@@ -22,7 +51,6 @@
     const db = getDatabase(app);
 
     const groupInput = document.getElementById("groupInput");
-    const saveGroupButton = document.getElementById("saveGroup");
     const sendLocationButton = document.getElementById("sendLocation");
     const status = document.getElementById("status");
 
@@ -31,18 +59,15 @@
       groupInput.value = localStorage.getItem("groupId");
     }
 
-    // 班名を保存
-    saveGroupButton.addEventListener("click", () => {
+    // 入力が変更されるたびに自動保存
+    groupInput.addEventListener("input", () => {
       const groupId = groupInput.value.trim();
       if (groupId) {
         localStorage.setItem("groupId", groupId);
-        alert("班名を保存しました");
-      } else {
-        alert("班名を入力してください");
       }
     });
 
-    // 送信処理（手動・自動共通）
+    // 送信処理
     function sendCurrentLocation() {
       const groupId = groupInput.value.trim();
       if (!groupId) {
@@ -71,12 +96,7 @@
     // 手動送信
     sendLocationButton.addEventListener("click", sendCurrentLocation);
 
-    // 自動送信（1分おき）
+    // 自動送信（1分ごと）
     setInterval(() => {
       if (document.visibilityState === "visible") {
-        sendCurrentLocation();
-      }
-    }, 60000); // 60000ms = 1分
-  </script>
-</body>
-</html>
+        sendCurre
