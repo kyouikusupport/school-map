@@ -96,7 +96,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+    import { getDatabase, ref, set, remove } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
     import { firebaseConfig } from './js/firebase-config.js';
 
     const app = initializeApp(firebaseConfig);
@@ -166,9 +166,7 @@
       status.textContent = `🛑 送信を終了しました (${new Date().toLocaleTimeString()})`;
       logMessage("終了");
     }
-
-
-    
+  
     // 手動送信
     sendLocationButton.addEventListener("click", () => sendCurrentLocation("手動"));
     endLocationButton.addEventListener("click", endLocation);
