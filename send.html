@@ -95,92 +95,86 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getDatabase, ref, set, remove } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
-    import { firebaseConfig } from './js/firebase-config.js';
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+  import { getDatabase, ref, set, remove } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+  import { firebaseConfig } from './js/firebase-config.js';
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-    const groupInput = document.getElementById("groupInput");
-    const sendLocationButton = document.getElementById("sendLocation");
-    const endLocationButton = document.getElementById("endLocation");
-    const status = document.getElementById("status");
-    const logList = document.getElementById("logList");
+  const groupInput = document.getElementById("groupInput");
+  const sendLocationButton = document.getElementById("sendLocation");
+  const endLocationButton = document.getElementById("endLocation"); // ⭐️← これが抜けていました！
+  const status = document.getElementById("status");
+  const logList = document.getElementById("logList");
 
-    // 保存されている班名を表示
-    if (localStorage.getItem("groupId")) {
-      groupInput.value = localStorage.getItem("groupId");
+  if (localStorage.getItem("groupId")) {
+    groupInput.value = localStorage.getItem("groupId");
+  }
+
+  groupInput.addEventListener("input", () => {
+    const groupId = groupInput.value.trim();
+    if (groupId) {
+      localStorage.setItem("groupId", groupId);
+    }
+  });
+
+  function logMessage(type) {
+    const li = document.createElement("li");
+    li.textContent = `【${type}】${new Date().toLocaleTimeString()} に送信しました`;
+    logList.prepend(li);
+  }
+
+  function sendCurrentLocation(type = "自動") {
+    const groupId = groupInput.value.trim();
+    if (!groupId) {
+      status.textContent = "⚠️ 班名が未入力です。";
+      return;
     }
 
-    // 入力変更時に保存
-    groupInput.addEventListener("input", () => {
-      const groupId = groupInput.value.trim();
-      if (groupId) {
-        localStorage.setItem("groupId", groupId);
-      }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        set(ref(db, 'groups/' + groupId), {
+          lat: lat,
+          lng: lng,
+          timestamp: Date.now()
+        });
+        status.textContent = `✅ ${type}送信: ${new Date().toLocaleTimeString()}`;
+        logMessage(type);
+      },
+      (error) => {
+        status.textContent = `❌ 位置取得エラー: ${error.message}`;
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  function endLocation() {
+    const groupId = groupInput.value.trim();
+    if (!groupId) {
+      status.textContent = "⚠️ 班名が未入力です。";
+      return;
+    }
+
+    remove(ref(db, 'groups/' + groupId)).then(() => {
+      status.textContent = `🛑 送信を終了しました (${new Date().toLocaleTimeString()})`;
+      logMessage("終了");
+    }).catch((error) => {
+      status.textContent = `❌ 削除エラー: ${error.message}`;
     });
+  }
 
-    // ログを画面に表示
-    function logMessage(type) {
-      const li = document.createElement("li");
-      li.textContent = `【${type}】${new Date().toLocaleTimeString()} に送信しました`;
-      logList.prepend(li);
+  sendLocationButton.addEventListener("click", () => sendCurrentLocation("手動"));
+  endLocationButton.addEventListener("click", endLocation);
+
+  setInterval(() => {
+    if (document.visibilityState === "visible") {
+      sendCurrentLocation("自動");
     }
+  }, 60000);
+</script>
 
-    // 現在地を送信
-    function sendCurrentLocation(type = "自動") {
-      const groupId = groupInput.value.trim();
-      if (!groupId) {
-        status.textContent = "⚠️ 班名が未入力です。";
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          set(ref(db, 'groups/' + groupId), {
-            lat: lat,
-            lng: lng,
-            timestamp: Date.now()
-          });
-          status.textContent = `✅ ${type}送信: ${new Date().toLocaleTimeString()}`;
-          logMessage(type);
-        },
-        (error) => {
-          status.textContent = `❌ 位置取得エラー: ${error.message}`;
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    }
-
-    // 送信を終了する
-    function endLocation() {
-      const groupId = groupInput.value.trim();
-      if (!groupId) {
-        status.textContent = "⚠️ 班名が未入力です。";
-        return;
-      }
-
-      remove(ref(db, 'groups/' + groupId)).then(() => {
-        status.textContent = `🛑 送信を終了しました (${new Date().toLocaleTimeString()})`;
-        logMessage("終了");
-      } ).catch((error) => {
-        status.textContent = `❌ 削除エラー: ${error.message}`;
-      });
-    }
-  
-    // 手動送信
-    sendLocationButton.addEventListener("click", () => sendCurrentLocation("手動"));
-    endLocationButton.addEventListener("click", endLocation);
-
-    // 自動送信（1分おき）
-    setInterval(() => {
-      if (document.visibilityState === "visible") {
-        sendCurrentLocation("自動");
-      }
-    }, 60000);
-  </script>
 </body>
 </html>
